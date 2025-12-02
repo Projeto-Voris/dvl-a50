@@ -12,34 +12,42 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Launch a talker and a listener in a component container."""
-
-import launch
 from launch_ros.actions import ComposableNodeContainer
 from launch_ros.descriptions import ComposableNode
-
+from ament_index_python.packages import get_package_share_directory
+from launch import LaunchDescription
+from launch.actions import DeclareLaunchArgument
+from launch.substitutions import PathJoinSubstitution, LaunchConfiguration
+from launch_ros.actions import Node
+from launch_ros.substitutions import FindPackageShare
 
 def generate_launch_description():
-    launch.actions.DeclareLaunchArgument('ip_address', default_value='192.168.194.95'),
-    """Generate launch description with multiple components."""
-    container = ComposableNodeContainer(
-            name='my_container',
-            namespace='',
-            package='rclcpp_components',
-            executable='component_container',
-            composable_node_descriptions=[
-                ComposableNode(
-                    package='dvl_a50',
-                    plugin='composition::LifecycleDVL',
-                    name='dvl_a50_node',
-                    parameters=[{'dvl_ip_address': launch.substitutions.LaunchConfiguration('ip_address')}],
-                    extra_arguments=[{'use_intra_process_comms': True}])#,
-                #ComposableNode(
-                #    package='composition',
-                #   plugin='composition::Listener',
-                #    name='listener')
-            ],
-            output='screen',
-    )
+      # Generate launch description with multiple components.
+      return LaunchDescription([
+            
+            DeclareLaunchArgument('ip_address', default_value='192.168.194.95'),
+            DeclareLaunchArgument('namespace', default_value='dvl_a50'),
+            DeclareLaunchArgument('frame_id', default_value='dvl_a50_link'),
 
-    return launch.LaunchDescription([container])
+            ComposableNodeContainer(
+                name='my_container',
+                namespace=LaunchConfiguration('namespace'),
+                package='rclcpp_components',
+                executable='component_container',
+                composable_node_descriptions=[
+                    ComposableNode(
+                        package='dvl_a50',
+                        plugin='composition::LifecycleDVL',
+                        name='dvl_a50_node',
+                        parameters=[{'dvl_ip_address': LaunchConfiguration('ip_address'),
+                                    'velocity_frame_id': LaunchConfiguration('frame_id'),
+                                    'position_frame_id': LaunchConfiguration('frame_id')}],
+                        extra_arguments=[{'use_intra_process_comms': True}])#,
+                    #ComposableNode(
+                    #    package='composition',
+                    #   plugin='composition::Listener',
+                    #    name='listener')
+                ],
+                output='screen',
+            ),
+      ])
